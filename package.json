@@ -1,0 +1,17 @@
+{
+  "name": "projeto-usuarios-mvc",
+  "version": "1.0.0",
+  "description": "Sistema de gerenciamento de usuários com arquitetura MVC",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": ["mvc", "usuarios", "api"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}
