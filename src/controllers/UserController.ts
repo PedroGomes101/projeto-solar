@@ -10,14 +10,14 @@ class UserController {
     /**
      * Lista todos os usuários (GET /api/users)
      * Implementa Issue001: Listagem de Usuários
-     * Retorna: name, email, age
+     * Retorna: id, name, email, age
      */
     static index(_req: Request, res: Response): Response {
         try {
             const users = User.findAll();
 
-            // Retorna apenas os campos solicitados: name, email, age
-            const usersData = users.map(user => user.toListJSON());
+            // Retorna dados públicos dos usuários (com id para operações PUT/DELETE)
+            const usersData = users.map(user => user.toPublicJSON());
 
             return res.status(200).json({
                 success: true,

@@ -328,6 +328,120 @@
                 grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             }
         }
+        /* Action Buttons */
+        .user-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid hsl(var(--border));
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 500;
+            height: 2.25rem;
+            padding: 0.4rem 0.85rem;
+            border-radius: var(--radius);
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            gap: 0.35rem;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-edit {
+            background: hsl(210 100% 52%);
+            color: #fff;
+        }
+
+        .btn-edit:hover {
+            background: hsl(210 100% 45%);
+        }
+
+        .btn-delete {
+            background: hsl(var(--destructive));
+            color: hsl(var(--destructive-foreground));
+        }
+
+        .btn-delete:hover {
+            background: hsl(0 84.2% 52%);
+        }
+
+        .btn-cancel {
+            background: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+        }
+
+        .btn-cancel:hover {
+            background: hsl(var(--muted));
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: calc(var(--radius) + 4px);
+            padding: 2rem;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            animation: modalIn 0.2s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: hsl(var(--foreground));
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        /* Confirm dialog */
+        .confirm-text {
+            color: hsl(var(--muted-foreground));
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .confirm-text strong {
+            color: hsl(var(--foreground));
+        }
     </style>
 </head>
 <body>
@@ -373,6 +487,51 @@
             </div>
             <div id="usersMessage"></div>
             <div id="usersList"></div>
+        </div>
+    </div>
+
+    <!-- Modal de Edição -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">✏️ Editar Usuário</h2>
+            </div>
+            <div id="editMessage"></div>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label for="editName">Nome Completo</label>
+                    <input type="text" id="editName" required placeholder="Nome">
+                </div>
+                <div class="form-group">
+                    <label for="editEmail">E-mail</label>
+                    <input type="email" id="editEmail" required placeholder="email@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="editAge">Idade</label>
+                    <input type="number" id="editAge" required placeholder="Idade" min="1" max="150">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cancel" onclick="closeEditModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-edit">💾 Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">🗑️ Confirmar Exclusão</h2>
+            </div>
+            <p class="confirm-text">Tem certeza que deseja excluir o usuário <strong id="deleteUserName"></strong>?</p>
+            <p class="confirm-text">Esta ação não pode ser desfeita.</p>
+            <input type="hidden" id="deleteId">
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
+                <button type="button" class="btn btn-delete" onclick="confirmDelete()">🗑️ Excluir</button>
+            </div>
         </div>
     </div>
 

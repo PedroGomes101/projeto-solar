@@ -7,6 +7,8 @@ const usersList = document.getElementById('usersList');
 const formMessage = document.getElementById('formMessage');
 const usersMessage = document.getElementById('usersMessage');
 
+// ==================== UTILIDADES ====================
+
 /**
  * Exibe uma mensagem na tela
  * @param {HTMLElement} element - Elemento onde a mensagem será exibida
@@ -15,11 +17,7 @@ const usersMessage = document.getElementById('usersMessage');
  */
 function showMessage(element, message, type) {
     element.innerHTML = `<div class="message ${type}">${message}</div>`;
-    
-    // Remove a mensagem após 5 segundos
-    setTimeout(() => {
-        element.innerHTML = '';
-    }, 5000);
+    setTimeout(() => { element.innerHTML = ''; }, 5000);
 }
 
 /**
@@ -29,70 +27,58 @@ function clearForm() {
     userForm.reset();
 }
 
-/**
- * Captura o envio do formulário e envia os dados via POST
- */
+// ==================== CRIAR USUÁRIO (POST) ====================
+
 userForm.addEventListener('submit', async (event) => {
-    event.preventDefault(); // Previne o comportamento padrão do formulário
-    
-    // Captura os dados do formulário
+    event.preventDefault();
+
     const formData = {
         name: document.getElementById('name').value.trim(),
         email: document.getElementById('email').value.trim(),
         age: parseInt(document.getElementById('age').value)
     };
-    
+
     try {
-        // Envia os dados via fetch com método POST
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok) {
             showMessage(formMessage, `✅ ${data.message || 'Usuário cadastrado com sucesso!'}`, 'success');
             clearForm();
-            // Atualiza a lista de usuários
             loadUsers();
         } else {
             showMessage(formMessage, `❌ ${data.message || 'Erro ao cadastrar usuário'}`, 'error');
         }
     } catch (error) {
         console.error('Erro ao enviar formulário:', error);
-        showMessage(formMessage, '❌ Erro ao conectar com o servidor. Verifique se a API está rodando.', 'error');
+        showMessage(formMessage, '❌ Erro ao conectar com o servidor.', 'error');
     }
 });
 
-/**
- * Carrega e exibe a lista de usuários usando fetch com método GET
- */
+// ==================== LISTAR USUÁRIOS (GET) ====================
+
 async function loadUsers() {
     try {
-        // Exibe estado de carregamento
         usersList.innerHTML = `
             <div class="loading">
                 <div class="spinner"></div>
                 <span>Carregando usuários...</span>
             </div>
         `;
-        
-        // Busca os usuários via fetch com método GET
+
         const response = await fetch(API_URL, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok) {
-            // Verifica se há usuários
             if (data.data && data.data.length > 0) {
                 displayUsers(data.data);
                 showMessage(usersMessage, `✅ ${data.count} usuário(s) encontrado(s)`, 'success');
@@ -106,13 +92,6 @@ async function loadUsers() {
                 `;
             }
         } else {
-            usersList.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">⚠️</div>
-                    <div class="empty-state-title">Erro ao carregar usuários</div>
-                    <p class="empty-state-description">${data.message || 'Tente novamente mais tarde'}</p>
-                </div>
-            `;
             showMessage(usersMessage, `❌ ${data.message || 'Erro ao carregar usuários'}`, 'error');
         }
     } catch (error) {
@@ -124,13 +103,11 @@ async function loadUsers() {
                 <p class="empty-state-description">Verifique se a API está rodando em http://localhost:3000</p>
             </div>
         `;
-        showMessage(usersMessage, '❌ Erro ao conectar com o servidor. Verifique se a API está rodando.', 'error');
     }
 }
 
 /**
- * Renderiza a lista de usuários na tela
- * @param {Array} users - Array de usuários
+ * Renderiza a lista de usuários com botões de editar e excluir
  */
 function displayUsers(users) {
     usersList.innerHTML = users.map(user => `
@@ -146,14 +123,147 @@ function displayUsers(users) {
                 </div>
                 <div class="user-detail">
                     <span class="user-detail-label">Idade:</span>
-                    <span>${user.age} anos</span>
+                    <span>${user.age !== null ? user.age + ' anos' : '—'}</span>
                 </div>
+            </div>
+            <div class="user-actions">
+                <button class="btn btn-edit" onclick="openEditModal(${user.id}, '${user.name.replace(/'/g, "\\'")}', '${user.email.replace(/'/g, "\\'")}', ${user.age})">
+                    ✏️ Editar
+                </button>
+                <button class="btn btn-delete" onclick="openDeleteModal(${user.id}, '${user.name.replace(/'/g, "\\'")}')">
+                    🗑️ Excluir
+                </button>
             </div>
         </div>
     `).join('');
 }
 
-// Carrega os usuários quando a página é carregada
+// ==================== EDITAR USUÁRIO (PUT) ====================
+
+/**
+ * Abre o modal de edição preenchido com os dados do usuário
+ */
+function openEditModal(id, name, email, age) {
+    document.getElementById('editId').value = id;
+    document.getElementById('editName').value = name;
+    document.getElementById('editEmail').value = email;
+    document.getElementById('editAge').value = age || '';
+    document.getElementById('editModal').classList.add('active');
+}
+
+/**
+ * Fecha o modal de edição
+ */
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+    document.getElementById('editMessage').innerHTML = '';
+}
+
+/**
+ * Envia a atualização via PUT
+ */
+document.getElementById('editForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const id = document.getElementById('editId').value;
+    const editMessage = document.getElementById('editMessage');
+
+    const updatedData = {
+        name: document.getElementById('editName').value.trim(),
+        email: document.getElementById('editEmail').value.trim(),
+        age: parseInt(document.getElementById('editAge').value)
+    };
+
+    try {
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedData)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showMessage(editMessage, `✅ ${data.message || 'Usuário atualizado!'}`, 'success');
+            setTimeout(() => {
+                closeEditModal();
+                loadUsers();
+            }, 1000);
+        } else {
+            showMessage(editMessage, `❌ ${data.message || 'Erro ao atualizar'}`, 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar usuário:', error);
+        showMessage(editMessage, '❌ Erro ao conectar com o servidor.', 'error');
+    }
+});
+
+// ==================== EXCLUIR USUÁRIO (DELETE) ====================
+
+/**
+ * Abre o modal de confirmação de exclusão
+ */
+function openDeleteModal(id, name) {
+    document.getElementById('deleteId').value = id;
+    document.getElementById('deleteUserName').textContent = name;
+    document.getElementById('deleteModal').classList.add('active');
+}
+
+/**
+ * Fecha o modal de exclusão
+ */
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+}
+
+/**
+ * Confirma e executa a exclusão via DELETE
+ */
+async function confirmDelete() {
+    const id = document.getElementById('deleteId').value;
+
+    try {
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        closeDeleteModal();
+
+        if (response.ok) {
+            showMessage(usersMessage, `✅ ${data.message || 'Usuário excluído com sucesso!'}`, 'success');
+            loadUsers();
+        } else {
+            showMessage(usersMessage, `❌ ${data.message || 'Erro ao excluir usuário'}`, 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao excluir usuário:', error);
+        closeDeleteModal();
+        showMessage(usersMessage, '❌ Erro ao conectar com o servidor.', 'error');
+    }
+}
+
+// ==================== FECHAR MODAIS COM ESC/CLICK FORA ====================
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeEditModal();
+        closeDeleteModal();
+    }
+});
+
+document.getElementById('editModal').addEventListener('click', (e) => {
+    if (e.target.id === 'editModal') closeEditModal();
+});
+
+document.getElementById('deleteModal').addEventListener('click', (e) => {
+    if (e.target.id === 'deleteModal') closeDeleteModal();
+});
+
+// ==================== INICIALIZAÇÃO ====================
+
 document.addEventListener('DOMContentLoaded', () => {
     loadUsers();
 });
