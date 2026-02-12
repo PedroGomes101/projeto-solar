@@ -1,12 +1,13 @@
 /**
  * Server: Entry Point
- * Configura e inicializa o servidor Express
+ * Configura e inicializa o servidor Express com SQLite
  */
 
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const userRoutes = require('./routes/userRoutes');
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import path from 'path';
+import { initDatabase } from './config/database';
+import userRoutes from './routes/userRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,7 +29,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 // ==================== ROTAS ====================
 
 // Rota principal - serve o index.html
-app.get('/', (req, res) => {
+app.get('/', (_req: Request, res: Response) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
@@ -38,7 +39,7 @@ app.use('/api/users', userRoutes);
 // ==================== TRATAMENTO DE ERROS ====================
 
 // Rota não encontrada (404)
-app.use((req, res, next) => {
+app.use((_req: Request, res: Response) => {
     res.status(404).json({
         success: false,
         message: 'Rota não encontrada'
@@ -46,7 +47,7 @@ app.use((req, res, next) => {
 });
 
 // Handler de erros global
-app.use((err, req, res, next) => {
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     console.error('Erro:', err);
     res.status(500).json({
         success: false,
@@ -57,12 +58,23 @@ app.use((err, req, res, next) => {
 
 // ==================== INICIALIZAÇÃO ====================
 
-app.listen(PORT, () => {
-    console.log('='.repeat(50));
-    console.log('🚀 Servidor iniciado com sucesso!');
-    console.log(`📍 URL: http://localhost:${PORT}`);
-    console.log(`📍 API: http://localhost:${PORT}/api/users`);
-    console.log('='.repeat(50));
+async function startServer(): Promise<void> {
+    // Inicializa o banco de dados SQLite
+    await initDatabase();
+
+    app.listen(PORT, () => {
+        console.log('='.repeat(50));
+        console.log('🚀 Servidor TypeScript + SQLite iniciado!');
+        console.log(`📍 URL: http://localhost:${PORT}`);
+        console.log(`📍 API: http://localhost:${PORT}/api/users`);
+        console.log(`💾 Banco: SQLite (data/database.sqlite)`);
+        console.log('='.repeat(50));
+    });
+}
+
+startServer().catch((err) => {
+    console.error('❌ Falha ao iniciar servidor:', err);
+    process.exit(1);
 });
 
-module.exports = app;
+export default app;

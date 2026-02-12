@@ -3,9 +3,10 @@
  * Define as rotas da API de usuários
  */
 
-const express = require('express');
-const router = express.Router();
-const UserController = require('../controllers/UserController');
+import { Router } from 'express';
+import UserController from '../controllers/UserController';
+
+const router = Router();
 
 // GET /api/users - Lista todos os usuários (Issue001)
 router.get('/', UserController.index);
@@ -22,4 +23,4 @@ router.put('/:id', UserController.update);
 // DELETE /api/users/:id - Remove usuário
 router.delete('/:id', UserController.destroy);
 
-module.exports = router;
+export default router;

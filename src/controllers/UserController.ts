@@ -3,7 +3,8 @@
  * Responsável por processar requisições e coordenar Model e View
  */
 
-const User = require('../models/User');
+import { Request, Response } from 'express';
+import User from '../models/User';
 
 class UserController {
     /**
@@ -11,13 +12,13 @@ class UserController {
      * Implementa Issue001: Listagem de Usuários
      * Retorna: name, email, age
      */
-    static index(req, res) {
+    static index(_req: Request, res: Response): Response {
         try {
             const users = User.findAll();
-            
+
             // Retorna apenas os campos solicitados: name, email, age
             const usersData = users.map(user => user.toListJSON());
-            
+
             return res.status(200).json({
                 success: true,
                 message: 'Usuários listados com sucesso',
@@ -29,7 +30,7 @@ class UserController {
             return res.status(500).json({
                 success: false,
                 message: 'Erro interno ao listar usuários',
-                error: error.message
+                error: error instanceof Error ? error.message : 'Erro desconhecido'
             });
         }
     }
@@ -37,18 +38,18 @@ class UserController {
     /**
      * Exibe um usuário específico (GET /api/users/:id)
      */
-    static show(req, res) {
+    static show(req: Request, res: Response): Response {
         try {
             const { id } = req.params;
             const user = User.findById(parseInt(id));
-            
+
             if (!user) {
                 return res.status(404).json({
                     success: false,
                     message: 'Usuário não encontrado'
                 });
             }
-            
+
             return res.status(200).json({
                 success: true,
                 data: user.toPublicJSON()
@@ -58,7 +59,7 @@ class UserController {
             return res.status(500).json({
                 success: false,
                 message: 'Erro interno ao buscar usuário',
-                error: error.message
+                error: error instanceof Error ? error.message : 'Erro desconhecido'
             });
         }
     }
@@ -67,37 +68,37 @@ class UserController {
      * Cria um novo usuário (POST /api/users)
      * Implementa Issue002: Criação de Registro de Usuários
      */
-    static store(req, res) {
+    static store(req: Request, res: Response): Response {
         try {
             const { name, email, password, age } = req.body;
-            
+
             // Cria o usuário utilizando o Model
             const result = User.create({
                 name,
                 email,
                 password,
-                age: age ? parseInt(age) : null
+                age: age ? parseInt(age) : undefined
             });
-            
+
             if (!result.success) {
                 return res.status(400).json({
                     success: false,
-                    message: result.errors.join(', '),
+                    message: result.errors?.join(', '),
                     errors: result.errors
                 });
             }
-            
+
             return res.status(201).json({
                 success: true,
                 message: 'Usuário cadastrado com sucesso!',
-                data: result.user.toPublicJSON()
+                data: result.user ? new User(result.user).toPublicJSON() : null
             });
         } catch (error) {
             console.error('Erro ao criar usuário:', error);
             return res.status(500).json({
                 success: false,
                 message: 'Erro interno ao criar usuário',
-                error: error.message
+                error: error instanceof Error ? error.message : 'Erro desconhecido'
             });
         }
     }
@@ -105,20 +106,20 @@ class UserController {
     /**
      * Atualiza um usuário (PUT /api/users/:id)
      */
-    static update(req, res) {
+    static update(req: Request, res: Response): Response {
         try {
             const { id } = req.params;
             const { name, email, age } = req.body;
-            
+
             const user = User.findById(parseInt(id));
-            
+
             if (!user) {
                 return res.status(404).json({
                     success: false,
                     message: 'Usuário não encontrado'
                 });
             }
-            
+
             // Verifica se o novo email já existe (excluindo o usuário atual)
             if (email && email !== user.email && User.emailExists(email)) {
                 return res.status(400).json({
@@ -126,12 +127,12 @@ class UserController {
                     message: 'Este email já está cadastrado'
                 });
             }
-            
+
             // Atualiza os campos
             if (name) user.name = name;
             if (email) user.email = email;
             if (age !== undefined) user.age = parseInt(age);
-            
+
             // Valida
             const validation = user.validate();
             if (!validation.valid) {
@@ -141,9 +142,9 @@ class UserController {
                     errors: validation.errors
                 });
             }
-            
+
             user.save();
-            
+
             return res.status(200).json({
                 success: true,
                 message: 'Usuário atualizado com sucesso',
@@ -154,7 +155,7 @@ class UserController {
             return res.status(500).json({
                 success: false,
                 message: 'Erro interno ao atualizar usuário',
-                error: error.message
+                error: error instanceof Error ? error.message : 'Erro desconhecido'
             });
         }
     }
@@ -162,18 +163,18 @@ class UserController {
     /**
      * Remove um usuário (DELETE /api/users/:id)
      */
-    static destroy(req, res) {
+    static destroy(req: Request, res: Response): Response {
         try {
             const { id } = req.params;
             const deleted = User.delete(parseInt(id));
-            
+
             if (!deleted) {
                 return res.status(404).json({
                     success: false,
                     message: 'Usuário não encontrado'
                 });
             }
-            
+
             return res.status(200).json({
                 success: true,
                 message: 'Usuário removido com sucesso'
@@ -183,10 +184,10 @@ class UserController {
             return res.status(500).json({
                 success: false,
                 message: 'Erro interno ao remover usuário',
-                error: error.message
+                error: error instanceof Error ? error.message : 'Erro desconhecido'
             });
         }
     }
 }
 
-module.exports = UserController;
+export default UserController;
